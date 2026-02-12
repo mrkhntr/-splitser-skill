@@ -13,11 +13,40 @@ OpenClaw-compatible skill for automating expense tracking with the Splitser API.
 
 ## Installation
 
+### As a Standalone Tool
+
 ```bash
 cd splitser-skill
 npm install
 npm run build
 ```
+
+### As an OpenClaw Skill
+
+1. **Clone or download this skill to your OpenClaw skills directory:**
+
+```bash
+cd ~/.openclaw/skills  # or your configured skills directory
+git clone https://github.com/mrkhntr/-splitser-skill.git
+cd splitser-skill
+```
+
+2. **Install dependencies:**
+
+```bash
+npm install
+npm run build
+```
+
+3. **Initialize with your credentials:**
+
+```bash
+npm start init your-email@example.com your-password
+```
+
+4. **The skill is now available to OpenClaw!** You can reference it in your automation workflows or invoke it directly through the OpenClaw CLI.
+
+OpenClaw will automatically discover the skill via the `skill.md` file and make its commands available to the AI agent.
 
 ## Quick Start
 
@@ -36,16 +65,16 @@ This will:
 
 ```bash
 # Get all active lists
-npm start lists
+splitser lists
 
 # Get archived lists
-npm start lists --archived
+splitser lists --archived
 
 # Create an expense
-npm start create-expense <list-id> "Coffee" 4.50 <your-member-id>
+splitser create-expense <list-id> "Coffee" 4.50 <your-member-id>
 
 # Upload a receipt image
-npm start upload-image <expense-id> ./receipt.jpg
+splitser upload-image <expense-id> ./receipt.jpg
 ```
 
 ## Usage as a Library
@@ -187,11 +216,56 @@ See [API Documentation](../SPLITSER_API_DOCS.md) for complete endpoint reference
 
 ## OpenClaw Integration
 
-This skill can be used with OpenClaw or similar automation systems:
+This skill is designed to work seamlessly with OpenClaw:
 
-1. Initialize once with credentials
-2. Call methods programmatically from your automation scripts
-3. Session is maintained automatically across requests
+### Automatic Discovery
+
+OpenClaw will automatically discover this skill through the `skill.md` file, which documents:
+- All available commands and their parameters
+- API methods for programmatic access
+- Type definitions and examples
+
+### Using in OpenClaw Workflows
+
+Once installed, you can use this skill in natural language commands:
+
+```
+"Add a $45 dinner expense to my travel list"
+"Upload the receipt from ~/Downloads/receipt.jpg to my last expense"
+"Show me all my active expense lists"
+```
+
+OpenClaw will translate these to direct commands:
+```bash
+splitser create-expense <list-id> "Dinner" 45 <member-id>
+splitser upload-image <expense-id> ~/Downloads/receipt.jpg
+splitser lists
+```
+
+And will:
+1. Parse your intent
+2. Call the appropriate skill commands
+3. Handle authentication automatically using stored credentials
+4. Return results in a natural language response
+
+### Programmatic Access
+
+You can also import the skill directly in custom OpenClaw scripts:
+
+```typescript
+import { SplitserClient } from 'splitser-skill';
+
+const client = new SplitserClient();
+// Credentials loaded automatically from ~/.splitser/config.json
+await client.createExpense(listId, expense);
+```
+
+### Session Management
+
+- Initialize once with `npm start init`
+- Credentials stored in `~/.splitser/config.json`
+- Session maintained automatically across all OpenClaw invocations
+- No need to re-authenticate unless session expires
 
 ## Examples
 

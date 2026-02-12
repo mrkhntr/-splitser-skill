@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import type {
@@ -51,9 +51,8 @@ export class SplitserClient {
    */
   private saveConfig(): void {
     try {
-      const fs = await import('fs');
       if (!existsSync(CONFIG_DIR)) {
-        fs.mkdirSync(CONFIG_DIR, { recursive: true });
+        mkdirSync(CONFIG_DIR, { recursive: true });
       }
       
       const configToSave = {

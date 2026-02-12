@@ -11,7 +11,7 @@ This skill allows you to manage expenses, split bills, and track shared costs th
 Before using this skill, initialize it with your Splitser credentials:
 
 ```bash
-npm start init <email> <password>
+splitser init <email> <password>
 ```
 
 Your credentials are securely stored in `~/.splitser/config.json` and session cookies are maintained automatically.
@@ -32,7 +32,7 @@ npm start init <email> <password>
 
 **Example:**
 ```bash
-npm start init user@example.com mypassword
+splitser init user@example.com mypassword
 ```
 
 ---
@@ -42,7 +42,7 @@ Retrieve all expense lists/groups.
 
 **Usage:**
 ```bash
-npm start lists [--archived]
+splitser lists [--archived]
 ```
 
 **Flags:**
@@ -50,8 +50,8 @@ npm start lists [--archived]
 
 **Examples:**
 ```bash
-npm start lists
-npm start lists --archived
+splitser lists
+splitser lists --archived
 ```
 
 ---
@@ -61,7 +61,7 @@ Create a new expense in a list.
 
 **Usage:**
 ```bash
-npm start create-expense <list-id> <name> <amount> <payer-id>
+splitser create-expense <list-id> <name> <amount> <payer-id>
 ```
 
 **Parameters:**
@@ -72,7 +72,7 @@ npm start create-expense <list-id> <name> <amount> <payer-id>
 
 **Example:**
 ```bash
-npm start create-expense 9b991c11-1442-4120-bf8f-5f9c4c2ad0de "Lunch at Cafe" 45.75 41f925fe-004e-40e2-8a16-e3f639b55e7f
+splitser create-expense 9b991c11-1442-4120-bf8f-5f9c4c2ad0de "Lunch at Cafe" 45.75 41f925fe-004e-40e2-8a16-e3f639b55e7f
 ```
 
 ---
@@ -82,7 +82,7 @@ Upload a receipt image to an existing expense.
 
 **Usage:**
 ```bash
-npm start upload-image <expense-id> <image-path>
+splitser upload-image <expense-id> <image-path>
 ```
 
 **Parameters:**
@@ -91,7 +91,7 @@ npm start upload-image <expense-id> <image-path>
 
 **Example:**
 ```bash
-npm start upload-image 1cd082cc-51ec-483c-9fee-b1ec876f26db ./receipt.jpg
+splitser upload-image 1cd082cc-51ec-483c-9fee-b1ec876f26db ./receipt.jpg
 ```
 
 ---

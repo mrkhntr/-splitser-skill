@@ -4,10 +4,14 @@
   "description": "OpenClaw skill for interacting with Splitser API",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "splitser": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "tsc && node dist/index.js",
+    "postinstall": "npm run build"
   },
   "keywords": [
     "splitser",
