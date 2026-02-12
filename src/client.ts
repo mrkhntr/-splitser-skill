@@ -155,6 +155,49 @@ export class SplitserClient {
   }
 
   /**
+   * Get expenses/list items for a specific list
+   */
+  async getListItems(listId: string, params?: import('./types.js').ListItemsQueryParams): Promise<import('./types.js').ListItemsResponse> {
+    const queryParams = new URLSearchParams();
+    
+    if (params?.page !== undefined) {
+      queryParams.append('page', params.page.toString());
+    }
+    if (params?.per_page !== undefined) {
+      queryParams.append('per_page', params.per_page.toString());
+    }
+    if (params?.sort) {
+      if (params.sort.payed_on) {
+        queryParams.append('sort[payed_on]', params.sort.payed_on);
+      }
+      if (params.sort.created_at) {
+        queryParams.append('sort[created_at]', params.sort.created_at);
+      }
+      if (params.sort.amount) {
+        queryParams.append('sort[amount]', params.sort.amount);
+      }
+      if (params.sort.updated_at) {
+        queryParams.append('sort[updated_at]', params.sort.updated_at);
+      }
+    }
+    if (params?.filter?.settled !== undefined) {
+      queryParams.append('filter[settled]', params.filter.settled.toString());
+    }
+
+    const url = `${this.baseUrl}/lists/${listId}/list_items?${queryParams.toString()}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Get list items failed: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json() as import('./types.js').ListItemsResponse;
+  }
+
+  /**
    * Get lists with optional filtering and pagination
    */
   async getLists(params?: ListQueryParams): Promise<SplitserList[]> {
@@ -201,6 +244,20 @@ export class SplitserClient {
   }
 
   /**
+   * Delete an expense
+   */
+  async deleteExpense(expenseId: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/expenses/${expenseId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Delete expense failed: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  /**
    * Upload an image for an expense
    */
   async uploadExpenseImage(expenseId: string, imagePath: string): Promise<any> {
@@ -237,6 +294,17 @@ export class SplitserClient {
       fractional: Math.round(dollars * 100),
       currency
     };
+  }
+
+  /**
+   * Helper to get local date string in YYYY-MM-DD format
+   * Uses machine's local timezone, not UTC
+   */
+  static getLocalDate(date: Date = new Date()): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   /**

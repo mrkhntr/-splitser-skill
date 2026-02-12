@@ -104,7 +104,7 @@ const expense = {
   },
   name: 'Lunch',
   payed_by_id: 'your-member-uuid',
-  payed_on: '2026-02-11',
+  payed_on: SplitserClient.getLocalDate(),
   source_amount: SplitserClient.createAmount(25.00),
   amount: SplitserClient.createAmount(25.00),
   exchange_rate: 1,
@@ -159,6 +159,19 @@ Convert dollar amount to fractional representation.
 SplitserClient.createAmount(12.34, 'USD')
 // Returns: { fractional: 1234, currency: 'USD' }
 ```
+
+#### `SplitserClient.getLocalDate(date?)`
+Get local date string in YYYY-MM-DD format using machine's local timezone.
+
+```typescript
+SplitserClient.getLocalDate()
+// Returns: '2026-02-11' (based on local timezone)
+
+SplitserClient.getLocalDate(new Date('2026-03-15'))
+// Returns: '2026-03-15'
+```
+
+**Note:** Uses local timezone, not UTC. Ensures dates match what the user sees.
 
 #### `SplitserClient.generateUUID()`
 Generate a random UUID v4 for new expenses.

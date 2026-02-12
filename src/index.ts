@@ -7,6 +7,16 @@ import type { Expense } from './types.js';
  * Splitser Skill - OpenClaw compatible skill for expense tracking
  */
 
+/**
+ * Get local date string in YYYY-MM-DD format
+ */
+function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Export the client for use as a library
 export { SplitserClient };
 export * from './types.js';
@@ -74,6 +84,42 @@ async function main() {
         }
         break;
 
+      case 'expenses':
+        {
+          const listId = args[1];
+          
+          if (!listId) {
+            console.error('Usage: splitser-skill expenses <list-id>');
+            process.exit(1);
+          }
+
+          const result = await client.getListItems(listId, {
+            page: 1,
+            per_page: 15,
+            sort: {
+              payed_on: 'desc',
+              created_at: 'desc'
+            },
+            filter: { settled: false }
+          });
+          
+          console.log('\nExpenses:');
+          result.data.forEach(({ expense }) => {
+            const amount = (expense.amount.fractional / 100).toFixed(2);
+            console.log(`  ${expense.name} - ${expense.amount.currency} $${amount}`);
+            console.log(`    ID: ${expense.id}`);
+            console.log(`    Date: ${expense.payed_on}`);
+            console.log(`    Status: ${expense.status}`);
+            console.log(`    Category: ${expense.category.main_description}`);
+            if (expense.image.image.original) {
+              console.log(`    Receipt: ${expense.image.image.small}`);
+            }
+            console.log('');
+          });
+          console.log(`Total: ${result.pagination.total_entries} expenses`);
+        }
+        break;
+
       case 'create-expense':
         {
           const listId = args[1];
@@ -95,7 +141,7 @@ async function main() {
             },
             name,
             payed_by_id: payerId,
-            payed_on: new Date().toISOString().split('T')[0],
+            payed_on: getLocalDateString(),
             source_amount: SplitserClient.createAmount(amount),
             amount: SplitserClient.createAmount(amount),
             exchange_rate: 1,
@@ -132,6 +178,20 @@ async function main() {
         }
         break;
 
+      case 'delete-expense':
+        {
+          const expenseId = args[1];
+          
+          if (!expenseId) {
+            console.error('Usage: splitser-skill delete-expense <expense-id>');
+            process.exit(1);
+          }
+
+          await client.deleteExpense(expenseId);
+          console.log(`✓ Expense ${expenseId} deleted successfully`);
+        }
+        break;
+
       case 'help':
       default:
         console.log(`
@@ -141,8 +201,10 @@ Usage:
   splitser-skill init <email> <password>          Initialize with credentials
   splitser-skill lists [--archived]               Get all lists
   splitser-skill members <list-id>                Get members of a list
+  splitser-skill expenses <list-id>               Get expenses/transactions of a list
   splitser-skill create-expense <list-id> <name> <amount> <payer-id>
   splitser-skill upload-image <expense-id> <image-path>
+  splitser-skill delete-expense <expense-id>      Delete an expense
   splitser-skill help                             Show this help
 
 Examples:
@@ -158,11 +220,17 @@ Examples:
   # Get members of a list
   splitser-skill members 9b991c11-1442-4120-bf8f-5f9c4c2ad0de
 
+  # Get expenses from a list
+  splitser-skill expenses 9b991c11-1442-4120-bf8f-5f9c4c2ad0de
+
   # Create an expense
   splitser-skill create-expense abc-123 "Dinner" 45.50 user-uuid-123
 
   # Upload receipt image
   splitser-skill upload-image expense-uuid-456 ./receipt.jpg
+
+  # Delete an expense
+  splitser-skill delete-expense expense-uuid-789
 
 Configuration is stored in: ~/.splitser/config.json
         `);

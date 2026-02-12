@@ -16,6 +16,43 @@ splitser init <email> <password>
 
 Your credentials are securely stored in `~/.splitser/config.json` and session cookies are maintained automatically.
 
+## Important Concepts
+
+### Payer vs. Splitters
+
+**Understanding expense splitting:**
+
+- **Payer (`payed_by_id`)**: The person who physically paid the bill/expense. This is typically the person making the request unless explicitly stated otherwise.
+  
+- **Splitters (`shares_attributes`)**: The people splitting/owing portions of the expense. This includes BOTH the payer and anyone they're splitting with.
+
+**Example Scenarios:**
+
+1. **"Split a $50 dinner with Henry"**
+   - Payer: You (the requester) - you paid the bill
+   - Splitters: You ($25) + Henry ($25)
+   - `payed_by_id`: Your member ID
+   - `shares_attributes`: Array with 2 shares (you and Henry, each $25)
+
+2. **"Henry paid $60 for groceries, split with me"**
+   - Payer: Henry - he paid the bill
+   - Splitters: Henry ($30) + You ($30)
+   - `payed_by_id`: Henry's member ID
+   - `shares_attributes`: Array with 2 shares (Henry and you, each $30)
+
+3. **"I paid $90 for concert tickets, split 3 ways with Henry and Sarah"**
+   - Payer: You (the requester)
+   - Splitters: You ($30) + Henry ($30) + Sarah ($30)
+   - `payed_by_id`: Your member ID
+   - `shares_attributes`: Array with 3 shares (you, Henry, Sarah, each $30)
+
+**Default Behavior:**
+- Unless otherwise specified, assume the requester is the payer
+- "Split with X" means the requester AND X are both splitting (2 people total)
+- The payer should always be included in the shares_attributes array
+
+---
+
 ## Commands
 
 ### init
@@ -82,6 +119,33 @@ Displays member details including:
 
 ---
 
+### expenses
+Get all expenses/transactions from a specific list.
+
+**Usage:**
+```bash
+splitser expenses <list-id>
+```
+
+**Parameters:**
+- `list-id` (required): UUID of the list
+
+**Example:**
+```bash
+splitser expenses 9b991c11-1442-4120-bf8f-5f9c4c2ad0de
+```
+
+**Output:**
+Displays expense details including:
+- Name and amount
+- Expense ID
+- Payment date
+- Status (active/deleted/settled)
+- Category
+- Receipt image URL (if available)
+
+---
+
 ### create-expense
 Create a new expense in a list.
 
@@ -101,6 +165,12 @@ splitser create-expense <list-id> <name> <amount> <payer-id>
 splitser create-expense 9b991c11-1442-4120-bf8f-5f9c4c2ad0de "Lunch at Cafe" 45.75 41f925fe-004e-40e2-8a16-e3f639b55e7f
 ```
 
+**Important Notes:**
+- `payer-id` is the person who PAID the bill (usually the requester)
+- To split the expense, you must include shares_attributes with ALL people splitting (including the payer)
+- See the "Payer vs. Splitters" section above for detailed examples
+- The basic CLI command creates a simple expense; for complex splits, use the library API
+
 ---
 
 ### upload-image
@@ -119,6 +189,29 @@ splitser upload-image <expense-id> <image-path>
 ```bash
 splitser upload-image 1cd082cc-51ec-483c-9fee-b1ec876f26db ./receipt.jpg
 ```
+
+---
+
+### delete-expense
+Delete an existing expense.
+
+**Usage:**
+```bash
+splitser delete-expense <expense-id>
+```
+
+**Parameters:**
+- `expense-id` (required): UUID of the expense to delete
+
+**Example:**
+```bash
+splitser delete-expense b3e63512-0d57-4610-9d77-d28e05904933
+```
+
+**Notes:**
+- Only the creator or list owner can delete expenses
+- Deleted expenses are removed from balance calculations
+- The expense may still appear in the list with status="deleted"
 
 ---
 
@@ -150,12 +243,29 @@ Get members of a specific list.
 - `params.per_page` (number): Results per page
 - `params.filter.member_set` (string): Filter by 'available' or 'archived'
 
+##### `async getListItems(listId: string, params?: ListItemsQueryParams): Promise<ListItemsResponse>`
+Get expenses/transactions from a specific list.
+
+**Parameters:**
+- `listId` (string): UUID of the list
+- `params.page` (number): Page number (1-indexed)
+- `params.per_page` (number): Results per page
+- `params.sort.payed_on` (string): Sort by payment date ('asc'/'desc')
+- `params.sort.created_at` (string): Sort by creation date ('asc'/'desc')
+- `params.filter.settled` (boolean): Filter by settled status
+
 ##### `async createExpense(listId: string, expense: Expense): Promise<any>`
 Create a new expense in a list.
 
 **Parameters:**
 - `listId` (string): UUID of the list
 - `expense` (Expense): Complete expense object
+
+##### `async deleteExpense(expenseId: string): Promise<void>`
+Delete an existing expense.
+
+**Parameters:**
+- `expenseId` (string): UUID of the expense to delete
 
 ##### `async uploadExpenseImage(expenseId: string, imagePath: string): Promise<any>`
 Upload a receipt image to an expense.
@@ -172,6 +282,16 @@ Helper to create money amount objects.
 - `currency` (string): Currency code (default: 'USD')
 
 **Returns:** `{ fractional: number, currency: string }`
+
+##### `static getLocalDate(date?: Date): string`
+Get local date string in YYYY-MM-DD format using machine's local timezone.
+
+**Parameters:**
+- `date` (Date): Date object (default: current date)
+
+**Returns:** Date string in YYYY-MM-DD format (e.g., '2026-02-11')
+
+**Note:** Uses local timezone, not UTC. This ensures dates match what the user sees on their machine.
 
 ##### `static generateUUID(): string`
 Generate a random UUID v4.
@@ -243,7 +363,7 @@ const expense = {
   category: { id: 999999999, category_source: 'auto' },
   name: 'Dinner',
   payed_by_id: 'member-uuid',
-  payed_on: '2026-02-11',
+  payed_on: SplitserClient.getLocalDate(),
   source_amount: SplitserClient.createAmount(75.50),
   amount: SplitserClient.createAmount(75.50),
   exchange_rate: 1,
@@ -262,30 +382,32 @@ await client.createExpense('list-uuid', expense);
 await client.uploadExpenseImage('expense-uuid', './receipt.png');
 ```
 
-### Split Bill Among Multiple People
+### Split a restaurant bill 3 ways
+
+**Scenario:** Alice paid $120 for dinner and wants to split it 3 ways with Bob and Charlie.
 
 ```typescript
 const expense = {
   id: SplitserClient.generateUUID(),
-  name: 'Restaurant Bill',
-  payed_by_id: 'alice-uuid',
-  payed_on: '2026-02-11',
+  name: 'Dinner at Italian Restaurant',
+  payed_by_id: 'alice-uuid',  // Alice paid the bill
+  payed_on: SplitserClient.getLocalDate(),
   source_amount: SplitserClient.createAmount(120.00),
   amount: SplitserClient.createAmount(120.00),
   exchange_rate: 1,
-  shares_attributes: [
+  shares_attributes: [  // ALL 3 people splitting the bill
     {
-      member_id: 'alice-uuid',
+      member_id: 'alice-uuid',  // Alice owes $40 (but already paid $120)
       meta: { type: 'exact', multiplier: 1 },
       source_amount: SplitserClient.createAmount(40.00)
     },
     {
-      member_id: 'bob-uuid',
+      member_id: 'bob-uuid',  // Bob owes Alice $40
       meta: { type: 'exact', multiplier: 1 },
       source_amount: SplitserClient.createAmount(40.00)
     },
     {
-      member_id: 'charlie-uuid',
+      member_id: 'charlie-uuid',  // Charlie owes Alice $40
       meta: { type: 'exact', multiplier: 1 },
       source_amount: SplitserClient.createAmount(40.00)
     }
@@ -293,6 +415,38 @@ const expense = {
 };
 
 await client.createExpense('list-uuid', expense);
+// Result: Bob and Charlie each owe Alice $40
+```
+
+### Split a bill 50/50
+
+**Scenario:** You paid $60 for groceries and want to split evenly with your roommate.
+
+```typescript
+const expense = {
+  id: SplitserClient.generateUUID(),
+  name: 'Groceries',
+  payed_by_id: 'your-uuid',  // You paid
+  payed_on: SplitserClient.getLocalDate(),
+  source_amount: SplitserClient.createAmount(60.00),
+  amount: SplitserClient.createAmount(60.00),
+  exchange_rate: 1,
+  shares_attributes: [  // Both people splitting 50/50
+    {
+      member_id: 'your-uuid',  // You owe $30 (already paid $60)
+      meta: { type: 'exact', multiplier: 1 },
+      source_amount: SplitserClient.createAmount(30.00)
+    },
+    {
+      member_id: 'roommate-uuid',  // Roommate owes you $30
+      meta: { type: 'exact', multiplier: 1 },
+      source_amount: SplitserClient.createAmount(30.00)
+    }
+  ]
+};
+
+await client.createExpense('list-uuid', expense);
+// Result: Roommate owes you $30
 ```
 
 ---
