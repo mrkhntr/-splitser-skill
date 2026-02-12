@@ -54,3 +54,53 @@ export interface SplitserList {
   archived: boolean;
   // Add other list fields as needed
 }
+
+export interface Member {
+  id: string;
+  nickname: string;
+  email: string;
+  list_id: string;
+  user_id: string;
+  default_split_template_id: string | null;
+  full_name: string;
+  commitments_to_pay: number;
+  commitments_to_receive: number;
+  archived: boolean;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+  accepted_at: number;
+  avatar: {
+    image: string | null;
+    user_id: string;
+    initials: string;
+  };
+  invitation: {
+    invitation: {
+      state: string;
+      url: string | null;
+    };
+  };
+}
+
+export interface MembersQueryParams {
+  page?: number;
+  per_page?: number;
+  filter?: {
+    member_set?: 'available' | 'archived';
+  };
+}
+
+export interface MembersResponse {
+  pagination: {
+    total_pages: number;
+    offset: number;
+    per_page: number;
+    total_entries: number;
+    current_page: number;
+  };
+  data: Array<{
+    permissions: any;
+    member: Member;
+  }>;
+}

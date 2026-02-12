@@ -47,6 +47,33 @@ async function main() {
         }
         break;
 
+      case 'members':
+        {
+          const listId = args[1];
+          
+          if (!listId) {
+            console.error('Usage: splitser-skill members <list-id>');
+            process.exit(1);
+          }
+
+          const result = await client.getMembers(listId, {
+            page: 1,
+            per_page: 150,
+            filter: { member_set: 'available' }
+          });
+          
+          console.log('\nMembers:');
+          result.data.forEach(({ member }) => {
+            console.log(`  ${member.nickname} (${member.email})`);
+            console.log(`    ID: ${member.id}`);
+            console.log(`    Full Name: ${member.full_name}`);
+            console.log(`    Initials: ${member.avatar.initials}`);
+            console.log('');
+          });
+          console.log(`Total: ${result.pagination.total_entries} members`);
+        }
+        break;
+
       case 'create-expense':
         {
           const listId = args[1];
@@ -113,6 +140,7 @@ Splitser Skill - Expense tracking automation
 Usage:
   splitser-skill init <email> <password>          Initialize with credentials
   splitser-skill lists [--archived]               Get all lists
+  splitser-skill members <list-id>                Get members of a list
   splitser-skill create-expense <list-id> <name> <amount> <payer-id>
   splitser-skill upload-image <expense-id> <image-path>
   splitser-skill help                             Show this help
@@ -126,6 +154,9 @@ Examples:
 
   # Get archived lists
   splitser-skill lists --archived
+
+  # Get members of a list
+  splitser-skill members 9b991c11-1442-4120-bf8f-5f9c4c2ad0de
 
   # Create an expense
   splitser-skill create-expense abc-123 "Dinner" 45.50 user-uuid-123

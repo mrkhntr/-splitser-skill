@@ -126,6 +126,35 @@ export class SplitserClient {
   }
 
   /**
+   * Get members of a specific list
+   */
+  async getMembers(listId: string, params?: import('./types.js').MembersQueryParams): Promise<import('./types.js').MembersResponse> {
+    const queryParams = new URLSearchParams();
+    
+    if (params?.page !== undefined) {
+      queryParams.append('page', params.page.toString());
+    }
+    if (params?.per_page !== undefined) {
+      queryParams.append('per_page', params.per_page.toString());
+    }
+    if (params?.filter?.member_set !== undefined) {
+      queryParams.append('filter[member_set]', params.filter.member_set);
+    }
+
+    const url = `${this.baseUrl}/lists/${listId}/members?${queryParams.toString()}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Get members failed: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json() as import('./types.js').MembersResponse;
+  }
+
+  /**
    * Get lists with optional filtering and pagination
    */
   async getLists(params?: ListQueryParams): Promise<SplitserList[]> {

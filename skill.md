@@ -56,6 +56,32 @@ splitser lists --archived
 
 ---
 
+### members
+Get all members of a specific list.
+
+**Usage:**
+```bash
+splitser members <list-id>
+```
+
+**Parameters:**
+- `list-id` (required): UUID of the list
+
+**Example:**
+```bash
+splitser members 9b991c11-1442-4120-bf8f-5f9c4c2ad0de
+```
+
+**Output:**
+Displays member details including:
+- Nickname
+- Email
+- Member ID (needed for creating expenses)
+- Full name
+- Initials
+
+---
+
 ### create-expense
 Create a new expense in a list.
 
@@ -114,6 +140,15 @@ Get all lists with optional filtering.
 - `params.page` (number): Page number (0-indexed)
 - `params.per_page` (number): Results per page
 - `params.filter.archived` (boolean): Filter archived lists
+
+##### `async getMembers(listId: string, params?: MembersQueryParams): Promise<MembersResponse>`
+Get members of a specific list.
+
+**Parameters:**
+- `listId` (string): UUID of the list
+- `params.page` (number): Page number (1-indexed)
+- `params.per_page` (number): Results per page
+- `params.filter.member_set` (string): Filter by 'available' or 'archived'
 
 ##### `async createExpense(listId: string, expense: Expense): Promise<any>`
 Create a new expense in a list.
